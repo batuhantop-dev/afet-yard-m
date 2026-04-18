@@ -1,0 +1,73 @@
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background-color: var(--bg-card);
+  border-bottom: 1px solid var(--border-color);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.logoArea {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.logoIcon {
+  color: var(--primary-red);
+  background: rgba(229, 57, 53, 0.1);
+  padding: 0.5rem;
+  border-radius: var(--radius-md);
+}
+
+.title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.subtitle {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.statusArea {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+}
+
+.connectionBadge {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-full);
+  background-color: rgba(76, 175, 80, 0.1);
+  color: var(--success-green);
+}
+
+.connectionBadge.offline {
+  background-color: rgba(244, 67, 54, 0.1);
+  color: var(--error-red);
+}
+
+.connectionBadge.connecting {
+  background-color: rgba(255, 152, 0, 0.1);
+  color: var(--accent-orange);
+}
+
+.volunteerInfo {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}

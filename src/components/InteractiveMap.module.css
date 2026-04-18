@@ -1,0 +1,124 @@
+.mapContainer {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 70px); /* Adjust based on Header height */
+  width: 100%;
+  background: var(--bg-dark);
+  position: relative;
+}
+
+.topBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border-color);
+  z-index: 2;
+}
+
+.backButton {
+  background: transparent;
+  color: var(--text-main);
+  padding: 0.5rem;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-color);
+}
+
+.backButton:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.title {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.mapWrapper {
+  flex: 1;
+  position: relative;
+}
+
+.legend {
+  position: absolute;
+  bottom: 1rem;
+  left: 1rem;
+  background: rgba(30, 30, 30, 0.9);
+  padding: 0.75rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  z-index: 2;
+  backdrop-filter: blur(4px);
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--text-main);
+}
+
+.colorBox {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.popupForm {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 200px;
+}
+
+.select, .textarea {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  background: white;
+  color: #333;
+}
+
+.submitBtn {
+  background: var(--primary-red);
+  color: white;
+  border: none;
+  padding: 0.5rem;
+  border-radius: 4px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 0.5rem;
+}
+
+.submitBtn:hover {
+  background: var(--primary-red-hover);
+}
+
+/* MapLibre popup styling overrides */
+:global(.maplibregl-popup-content) {
+  padding: 12px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+:global(.maplibregl-popup-close-button) {
+  right: 8px;
+  top: 8px;
+  font-size: 16px;
+  color: #333;
+}
+
+:global(.maplibregl-popup-anchor-top .maplibregl-popup-tip) {
+  border-bottom-color: white;
+}
+:global(.maplibregl-popup-anchor-bottom .maplibregl-popup-tip) {
+  border-top-color: white;
+}
