@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Activity, AlertTriangle, AlertOctagon, Route, HeartPulse, HardHat, Radio, Package, XSquare } from 'lucide-react';
 import styles from './AfadDashboard.module.css';
 
-const AfadDashboard = ({ onBack, onShowMap }) => {
+const AfadDashboard = ({ onBack, onShowMap, onShowMesh }) => {
   const [reports, setReports] = useState({});
   const [formReports, setFormReports] = useState([]);
 
@@ -172,6 +172,11 @@ const AfadDashboard = ({ onBack, onShowMap }) => {
           <button className={styles.actionBtn} onClick={onShowMap}>
             <Route size={20} />
             Dışarıdan İçeri Giriş Rotası Bul
+          </button>
+          
+          <button className={styles.actionBtn} onClick={onShowMesh} style={{marginTop: '1rem', background: '#238636', color: '#fff', borderColor: '#2ea043', gap: '8px', display: 'flex', alignItems: 'center'}}>
+            <Radio size={20} />
+            Mesh Ağ Canlı Veri Akışını Görüntüle
           </button>
           
           <div style={{marginTop: '2rem', padding: '1rem', background: 'rgba(56, 139, 253, 0.1)', border: '1px solid #388bfd', borderRadius: '6px'}}>

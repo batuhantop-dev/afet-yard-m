@@ -7,6 +7,24 @@ const Dashboard = ({ onNavigate }) => {
   const [showSupplyModal, setShowSupplyModal] = useState(false);
   const [formReports, setFormReports] = useState([]);
 
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [loginId, setLoginId] = useState('');
+  const [loginPass, setLoginPass] = useState('');
+  const [loginError, setLoginError] = useState(false);
+
+  const handleLoginSubmit = (e) => {
+    e.preventDefault();
+    if (loginId === '111' && loginPass === '111') {
+      setShowLoginModal(false);
+      setLoginId('');
+      setLoginPass('');
+      setLoginError(false);
+      onNavigate('afad');
+    } else {
+      setLoginError(true);
+    }
+  };
+
   useEffect(() => {
     const fetchLocalData = () => {
       try {
@@ -101,7 +119,7 @@ const Dashboard = ({ onNavigate }) => {
         </p>
 
         <button 
-          onClick={() => onNavigate('afad')}
+          onClick={() => setShowLoginModal(true)}
           style={{
             background: '#111', color: '#f85149', padding: '12px 24px', 
             borderRadius: '8px', border: '1px solid #30363d', 
@@ -111,7 +129,7 @@ const Dashboard = ({ onNavigate }) => {
           }}
         >
           <ShieldAlert size={20} />
-          AFAD / Kızılay Kriz Kontrol Merkezine Bağlan
+          City Link Kontrol Merkezine Bağlan
         </button>
 
         <button 
@@ -177,6 +195,30 @@ const Dashboard = ({ onNavigate }) => {
               <p style={{ color: '#4b5563', lineHeight: '1.6' }}>Deprem sonrası özellikle ilk saatlerde <strong>"Panik ve Bilgi Kirliliği"</strong> en az göçük kadar tehlikelidir. Sadece sistemdeki AFAD kriz merkezi teyitli bilgilere veya kapalı ağ haritasındaki verilere itibar edin. İhtiyacınız olmayan hiçbir tıbbi stoğu kendi çantanıza almayın.</p>
             </div>
             
+          </div>
+        </div>
+      )}
+
+      {/* Login Modalı */}
+      {showLoginModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          <div style={{ background: '#1e1e1e', color: '#fff', borderRadius: '12px', padding: '2.5rem', width: '90%', maxWidth: '400px', position: 'relative', boxShadow: '0 20px 40px rgba(0,0,0,0.5)', border: '1px solid #333' }}>
+            <button onClick={() => setShowLoginModal(false)} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'transparent', border: 'none', color: '#888', cursor: 'pointer' }}><XSquare size={24} /></button>
+            <h2 style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: 0, color: '#f85149', borderBottom: '1px solid #333', paddingBottom: '1rem' }}>
+              <ShieldAlert size={24} /> City Link Girişi
+            </h2>
+            <form onSubmit={handleLoginSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1.5rem' }}>
+              {loginError && <div style={{ color: '#ff4d4f', fontSize: '0.9rem', background: 'rgba(255, 77, 79, 0.1)', padding: '8px', borderRadius: '4px' }}>Hatalı ID veya Şifre!</div>}
+              <div>
+                <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.9rem', color: '#aaa' }}>Giriş ID</label>
+                <input type="text" value={loginId} onChange={(e) => setLoginId(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #444', background: '#2a2a2a', color: '#fff', boxSizing: 'border-box' }} autoFocus />
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.9rem', color: '#aaa' }}>Şifre</label>
+                <input type="password" value={loginPass} onChange={(e) => setLoginPass(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #444', background: '#2a2a2a', color: '#fff', boxSizing: 'border-box' }} />
+              </div>
+              <button type="submit" style={{ background: '#f85149', color: '#fff', border: 'none', padding: '12px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', marginTop: '10px', fontSize: '1rem' }}>Sisteme Bağlan</button>
+            </form>
           </div>
         </div>
       )}

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Map, { Source, Layer, Popup, Marker } from 'react-map-gl/maplibre';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { ArrowLeft, Route, Activity, ShieldAlert, CheckCircle, Server, Radio, HeartPulse, Package, Car, Footprints } from 'lucide-react';
+import { ArrowLeft, Route, Activity, ShieldAlert, CheckCircle, Server, Radio, HeartPulse, Package, Car, Footprints, Map as MapIcon } from 'lucide-react';
 import styles from './InteractiveMap.module.css';
 
 // HARDCODED ORS API KEY
@@ -48,6 +48,113 @@ const PHARMACIES = [
   { id: 'e4', name: 'Umut Eczanesi (Göğüs Hastalıkları Yakını)', coordinates: [28.9175, 40.9960] },
 ];
 
+const MESH_NODES = [
+  // Çırpıcı (Sol)
+  { id: 'm1', coordinates: [28.8950, 40.9980] },
+  { id: 'm2', coordinates: [28.8965, 40.9995] },
+  { id: 'm3', coordinates: [28.8955, 41.0010] },
+  // Ortaya Doğru
+  { id: 'm4', coordinates: [28.8980, 40.9970] },
+  { id: 'm5', coordinates: [28.8995, 40.9985] },
+  { id: 'm6', coordinates: [28.9005, 40.9950] },
+  // Ana Kriz (Orta)
+  { id: 'm7', coordinates: [28.9020, 40.9960] },
+  { id: 'm8', coordinates: [28.9030, 40.9980] },
+  { id: 'm9', coordinates: [28.9025, 41.0005] },
+  { id: 'm10', coordinates: [28.9045, 40.9955] },
+  // Sağa Doğru
+  { id: 'm11', coordinates: [28.9065, 40.9975] },
+  { id: 'm12', coordinates: [28.9080, 40.9995] },
+  { id: 'm13', coordinates: [28.9070, 41.0020] },
+  { id: 'm14', coordinates: [28.9095, 41.0040] },
+  { id: 'm15', coordinates: [28.9110, 41.0015] },
+  // Merkezefendi (Sağ)
+  { id: 'm16', coordinates: [28.9130, 41.0060] }
+];
+
+// Her düğümün diğer TÜM düğümlere bağlı olduğunu gösteren Full Mesh Topolojisi
+const MESH_EDGES = [];
+for (let i = 0; i < MESH_NODES.length; i++) {
+  for (let j = i + 1; j < MESH_NODES.length; j++) {
+    MESH_EDGES.push([i, j]);
+  }
+}
+
+const PING_PATH = [0, 3, 4, 6, 7, 11, 14, 15, 13, 12, 8, 4, 1]; // Zıplama rotası
+
+const SPIDER_LINES = {
+  type: 'FeatureCollection',
+  features: MESH_EDGES.map(edge => ({
+    type: 'Feature',
+    geometry: {
+      type: 'LineString',
+      coordinates: [MESH_NODES[edge[0]].coordinates, MESH_NODES[edge[1]].coordinates]
+    }
+  }))
+};
+
+const UPLINK_NODES = [
+  { id: 'u0', coordinates: [28.8720, 41.0250] }, // Fiber Tap
+  { id: 'u1', coordinates: [28.8760, 41.0200] },
+  { id: 'u2', coordinates: [28.8820, 41.0180] },
+  { id: 'u3', coordinates: [28.8800, 41.0120] },
+  { id: 'u4', coordinates: [28.8880, 41.0080] },
+  { id: 'u5', coordinates: [28.8850, 41.0030] },
+  { id: 'u6', coordinates: [28.8920, 41.0020] },
+  { id: 'u7', coordinates: [28.8950, 40.9980] }  // Zeytinburnu Çırpıcı
+];
+
+const UPLINK_EDGES = [];
+for(let i=0; i<UPLINK_NODES.length; i++) {
+   for(let j=i+1; j<UPLINK_NODES.length; j++) {
+      if (Math.abs(i - j) <= 3) {
+         UPLINK_EDGES.push([i, j]);
+      }
+   }
+}
+
+const UPLINK_LINE = {
+  type: 'FeatureCollection',
+  features: UPLINK_EDGES.map(edge => ({
+    type: 'Feature',
+    geometry: {
+      type: 'LineString',
+      coordinates: [UPLINK_NODES[edge[0]].coordinates, UPLINK_NODES[edge[1]].coordinates]
+    }
+  }))
+};
+
+// Sultangazi (Sağ Fiber Ucu) ağı
+const SULTAN_NODES = [
+  { id: 's0', coordinates: [28.9050, 41.0600] }, // Right Fiber End
+  { id: 's1', coordinates: [28.9000, 41.0660] },
+  { id: 's2', coordinates: [28.8960, 41.0700] },
+  { id: 's3', coordinates: [28.8930, 41.0740] },
+  { id: 's4', coordinates: [28.8880, 41.0800] },
+  { id: 's5', coordinates: [28.8840, 41.0850] },
+  { id: 's6', coordinates: [28.8800, 41.0900] }  // Sultangazi Management Center
+];
+
+const SULTAN_EDGES = [];
+for(let i=0; i<SULTAN_NODES.length; i++) {
+   for(let j=i+1; j<SULTAN_NODES.length; j++) {
+      if (Math.abs(i - j) <= 3) {
+         SULTAN_EDGES.push([i, j]);
+      }
+   }
+}
+
+const SULTAN_LINE = {
+  type: 'FeatureCollection',
+  features: SULTAN_EDGES.map(edge => ({
+    type: 'Feature',
+    geometry: {
+      type: 'LineString',
+      coordinates: [SULTAN_NODES[edge[0]].coordinates, SULTAN_NODES[edge[1]].coordinates]
+    }
+  }))
+};
+
 // Zeytinburnu & Tozkoparan Polygon Geometry
 const ZEYTINBURNU_COORDS = [
   [28.8910, 40.9890], // Güney Batı / Bakırköy sınırı
@@ -73,27 +180,21 @@ const ZEYTINBURNU_POLYGON = {
   ]
 };
 
-// 1. Derece Acil Ulaşım Yolları (Dış Yardım Koridorları)
-const EMERGENCY_ROADS = {
+// Özel İletişim Hattı (Doğrusal Fiber Hat)
+const METRO_FIBER_LINE = {
   type: 'FeatureCollection',
-  features: [
-    {
-      type: 'Feature',
-      properties: { name: 'D-100 (E-5) Karayolu' },
-      geometry: { type: 'LineString', coordinates: [[28.8750, 41.0120], [28.9000, 41.0180], [28.9240, 41.0110]] }
-    },
-    {
-      type: 'Feature',
-      properties: { name: 'Kennedy Cd. (Sahil Yolu)' },
-      geometry: { type: 'LineString', coordinates: [[28.8910, 40.9850], [28.9050, 40.9890], [28.9280, 40.9910]] }
-    },
-    {
-      type: 'Feature',
-      properties: { name: '10. Yıl Caddesi' },
-      geometry: { type: 'LineString', coordinates: [[28.9240, 41.0110], [28.9220, 41.0000], [28.9280, 40.9910]] }
-    }
-  ]
+  features: [{
+    type: 'Feature',
+    properties: { name: 'Düz Fiber Hattı' },
+    geometry: { type: 'LineString', coordinates: [
+      [28.8450, 41.0020], // Bahçelievler
+      [28.8720, 41.0250], // Güngören
+      [28.8830, 41.0400], // Esenler
+      [28.9050, 41.0600]  // Gaziosmanpaşa
+    ]}
+  }]
 };
+const MAINFRAME_COORD = [28.7890, 41.1060];
 
 // Helper to create a 20x20m virtual box exactly at the clicked coordinate
 const createVirtualBuilding = (lng, lat) => {
@@ -112,6 +213,18 @@ const createVirtualBuilding = (lng, lat) => {
 };
 
 const InteractiveMap = ({ onBack, mode = 'building' }) => {
+  const [pingIndex, setPingIndex] = useState(0);
+
+  useEffect(() => {
+    let interval;
+    if (mode === 'mesh_view') {
+      interval = setInterval(() => {
+        setPingIndex(prev => (prev + 1) % PING_PATH.length);
+      }, 300); // 300ms hizli data pingi
+    }
+    return () => clearInterval(interval);
+  }, [mode]);
+
   const [viewState, setViewState] = useState({
     longitude: ZEYTINBURNU_CENTER.longitude, 
     latitude: ZEYTINBURNU_CENTER.latitude,
@@ -119,6 +232,26 @@ const InteractiveMap = ({ onBack, mode = 'building' }) => {
     pitch: 60, 
     bearing: -20
   });
+
+  useEffect(() => {
+    if (mode === 'mesh_view') {
+      setViewState({
+        longitude: 28.9040, 
+        latitude: 41.0020,
+        zoom: 14.1, // Genel agi gormek icin ayarlandi
+        pitch: 0, 
+        bearing: 0
+      });
+    } else {
+      setViewState({
+        longitude: ZEYTINBURNU_CENTER.longitude, 
+        latitude: ZEYTINBURNU_CENTER.latitude,
+        zoom: ZEYTINBURNU_CENTER.zoom,
+        pitch: 60, 
+        bearing: -20
+      });
+    }
+  }, [mode]);
 
   const [reports, setReports] = useState(() => {
     // 1. Sayfa açıldığında verileri hafızadan (localStorage) yükle
@@ -193,6 +326,8 @@ const InteractiveMap = ({ onBack, mode = 'building' }) => {
   const [routeData, setRouteData] = useState(null);
   const [isRouting, setIsRouting] = useState(false);
   const [transportMode, setTransportMode] = useState('cycling-road');
+  const [showEmergencyRoads, setShowEmergencyRoads] = useState(false);
+  const [showFiber, setShowFiber] = useState(false);
 
   // Normal left click is for manual routing
   const onClick = useCallback(event => {
@@ -518,10 +653,14 @@ const InteractiveMap = ({ onBack, mode = 'building' }) => {
           <button className={styles.backButton} onClick={onBack}>
             <ArrowLeft size={20} />
           </button>
-          <h2 className={styles.title}>3D Hasar ve Yol Bildirim Haritası (Zeytinburnu & Tozkoparan)</h2>
+          <h2 className={styles.title}>
+            {mode === 'mesh_view' ? '📡 Mesh Ağı Canlı Veri Akış Topolojisi' : '3D Hasar ve Yol Bildirim Haritası (Zeytinburnu & Tozkoparan)'}
+          </h2>
         </div>
         
         <div style={{display: 'flex', gap: '8px', alignItems: 'center'}}>
+          {mode !== 'mesh_view' && (
+            <>
           <button 
             onClick={handleAFADSync}
             style={{
@@ -564,6 +703,52 @@ const InteractiveMap = ({ onBack, mode = 'building' }) => {
           >
             <Activity size={16} />
             {isRouting && activeNearestMode ? 'Hesaplanıyor...' : 'En Yakın Hastane'}
+          </button>
+
+          <button 
+            onClick={() => setShowEmergencyRoads(!showEmergencyRoads)}
+            style={{
+              padding: '6px 12px', 
+              background: showEmergencyRoads ? '#f59e0b' : '#333', 
+              color: 'white', 
+              borderRadius: '4px', 
+              border: 'none', 
+              cursor: 'pointer', 
+              fontWeight: 'bold',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+            title="Dışarıdan gelen acil yardım tırları için ana ulaşım arterlerini göster/gizle"
+          >
+            <MapIcon size={16} />
+            Acil Yollar
+          </button>
+
+          <button 
+            onClick={() => {
+               setShowFiber(!showFiber);
+               if (!showFiber) {
+                  // Focus the map so both Zeytinburnu and Başakşehir are visible roughly
+                  setViewState(prev => ({ ...prev, longitude: 28.8450, latitude: 41.0500, zoom: 11.5 }));
+               }
+            }}
+            style={{
+              padding: '6px 12px', 
+              background: showFiber ? '#facc15' : '#333', 
+              color: showFiber ? '#000' : 'white', 
+              borderRadius: '4px', 
+              border: 'none', 
+              cursor: 'pointer', 
+              fontWeight: 'bold',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+            title="Başakşehir'den Zeytinburnu güvenli noktasına uzanan veri akış ağını göster/gizle"
+          >
+            <Server size={16} color={showFiber ? '#000' : 'white'} />
+            Fiber Ağ
           </button>
 
           {/* Transport Mode Toggles */}
@@ -622,6 +807,8 @@ const InteractiveMap = ({ onBack, mode = 'building' }) => {
             <Route size={16} />
             {routeMode === 'idle' ? 'Serbest Rota' : 'İptal'}
           </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -659,27 +846,29 @@ const InteractiveMap = ({ onBack, mode = 'building' }) => {
              />
           </Source>
 
-          {/* 1. Derece Acil Ulaşım Yolları (Dış Yardım Koridorları) */}
-          <Source id="emergency-roads" type="geojson" data={EMERGENCY_ROADS}>
-             <Layer
-                id="emergency-roads-bg"
-                type="line"
-                paint={{
-                   'line-color': '#f59e0b',
-                   'line-width': 8,
-                   'line-opacity': 0.35
-                }}
-             />
-             <Layer
-                id="emergency-roads-line"
-                type="line"
-                paint={{
-                   'line-color': '#d97706',
-                   'line-width': 3,
-                   'line-dasharray': [2, 1]
-                }}
-             />
-          </Source>
+          {/* 1. Derece Acil Ulaşım Yolları (Dış Yardım Koridorları) Gerçek Veri */}
+          {showEmergencyRoads && (
+             <Source id="emergency-roads" type="geojson" data="/acil_yollar.geojson">
+                <Layer
+                   id="emergency-roads-bg"
+                   type="line"
+                   paint={{
+                      'line-color': '#f59e0b',
+                      'line-width': ['interpolate', ['linear'], ['zoom'], 10, 1, 14, 6],
+                      'line-opacity': 0.4
+                   }}
+                />
+                <Layer
+                   id="emergency-roads-line"
+                   type="line"
+                   paint={{
+                      'line-color': '#d97706',
+                      'line-width': ['interpolate', ['linear'], ['zoom'], 10, 0.5, 14, 3],
+                      'line-dasharray': [2, 1]
+                   }}
+                />
+             </Source>
+          )}
 
           {/* Toplanma Alanları Yeşil Bölge (Safe Zone) Halesi */}
           <Source id="assembly-safe-zones" type="geojson" data={{
@@ -709,6 +898,115 @@ const InteractiveMap = ({ onBack, mode = 'building' }) => {
                   }}
               />
           </Source>
+
+          {/* Özel Fiber Ağı ve Bahçeşehir Sunucusu */}
+          {(showFiber || mode === 'mesh_view') && (
+             <Source id="fiber-line" type="geojson" data={METRO_FIBER_LINE}>
+                <Layer
+                   id="fiber-bg"
+                   type="line"
+                   paint={{
+                      'line-color': '#facc15',
+                      'line-width': 6,
+                      'line-opacity': 0.9
+                   }}
+                />
+                <Layer
+                   id="fiber-glow"
+                   type="line"
+                   paint={{
+                      'line-color': '#000',
+                      'line-width': 2,
+                      'line-dasharray': [2, 2]
+                   }}
+                />
+             </Source>
+          )}
+
+           {/* (AFAD Ana Bilgisayar Marker'ı İptal Edildi - Sadece Fiber Ağ Görünüyor) */}
+
+          {/* Mesh Network Layers */}
+          {mode === 'mesh_view' && (
+             <>
+               <Source id="mesh-line" type="geojson" data={SPIDER_LINES}>
+                  <Layer
+                     id="mesh-bg"
+                     type="line"
+                     paint={{
+                        'line-color': '#69f0ae',
+                        'line-width': 1.5,
+                        'line-opacity': 0.35,
+                        'line-dasharray': [2, 4]
+                     }}
+                  />
+               </Source>
+               <Source id="uplink-line" type="geojson" data={UPLINK_LINE}>
+                  <Layer
+                     id="uplink-bg"
+                     type="line"
+                     paint={{
+                        'line-color': '#00e676',
+                        'line-width': 1.5,
+                        'line-opacity': 0.4,
+                        'line-dasharray': [2, 3]
+                     }}
+                  />
+               </Source>
+               <Source id="sultan-line" type="geojson" data={SULTAN_LINE}>
+                  <Layer
+                     id="sultan-bg"
+                     type="line"
+                     paint={{
+                        'line-color': '#00e676',
+                        'line-width': 1.5,
+                        'line-opacity': 0.4,
+                        'line-dasharray': [2, 3]
+                     }}
+                  />
+               </Source>
+             </>
+          )}
+
+          {/* HTML Overlay for Nodes and Pings to allow scaling and CSS Animation */}
+          {mode === 'mesh_view' && MESH_NODES.map((n, i) => {
+             const isPing = PING_PATH[pingIndex] === i;
+             return (
+               <Marker key={`mesh-node-${i}`} longitude={n.coordinates[0]} latitude={n.coordinates[1]} anchor="center">
+                  <div className={styles.meshNodeContainer}>
+                    <div className={styles.meshNodeGlow} />
+                    {isPing && (
+                      <div className={styles.meshPingEffect} />
+                    )}
+                  </div>
+               </Marker>
+             );
+          })}
+
+          {/* Fiber to Mesh Uplink Nodes */}
+          {mode === 'mesh_view' && [...UPLINK_NODES, ...SULTAN_NODES].map((n, i) => (
+             <Marker key={`extra-node-${i}`} longitude={n.coordinates[0]} latitude={n.coordinates[1]} anchor="center">
+                <div className={styles.meshNodeContainer}>
+                  <div className={styles.meshNodeGlow} style={{ borderColor: '#69f0ae', width: '12px', height: '12px', opacity: 0.8 }} />
+                </div>
+             </Marker>
+          ))}
+
+          {/* Sultangazi Management Center Marker */}
+          {mode === 'mesh_view' && (
+             <Marker longitude={SULTAN_NODES[6].coordinates[0]} latitude={SULTAN_NODES[6].coordinates[1]} anchor="bottom">
+                <div style={{
+                  background: '#69f0ae', color: '#000', padding: '6px 10px',
+                  borderRadius: '6px', border: '2px solid #000',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center',
+                  fontWeight: 'bold', boxShadow: '0 0 10px rgba(105, 240, 174, 0.8)',
+                  cursor: 'default',
+                  marginBottom: '10px'
+                }}>
+                  <span style={{ fontSize: '0.75rem' }}>SULTANGAZİ</span>
+                  <span style={{ fontSize: '0.65rem' }}>YÖNETİM MERKEZİ</span>
+                </div>
+             </Marker>
+          )}
 
           {/* Route Layer */}
           {routeData && (
@@ -746,9 +1044,10 @@ const InteractiveMap = ({ onBack, mode = 'building' }) => {
             return (
               <Marker key={point.id} longitude={point.coordinates[0]} latitude={point.coordinates[1]} anchor="bottom">
                 <div 
-                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', transform: `scale(${markerScale})`, transformOrigin: 'bottom center', transition: 'transform 0.2s' }}
+                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: mode === 'mesh_view' ? 'default' : 'pointer', transform: `scale(${markerScale})`, transformOrigin: 'bottom center', transition: 'transform 0.2s' }}
                   onClick={(e) => {
                     e.stopPropagation();
+                    if (mode === 'mesh_view') return;
                     setSelectedAssembly(point);
                     setSelectedFeature(null);
                   }}
@@ -764,7 +1063,7 @@ const InteractiveMap = ({ onBack, mode = 'building' }) => {
           })}
 
           {/* Medical Facilities Markers */}
-          {MEDICAL_FACILITIES.map(facility => (
+          {mode !== 'mesh_view' && MEDICAL_FACILITIES.map(facility => (
             <Marker key={facility.id} longitude={facility.coordinates[0]} latitude={facility.coordinates[1]} anchor="center">
               <div 
                 style={{ background: 'white', border: '3px solid #e91e63', color: '#e91e63', borderRadius: '50%', width: '26px', height: '26px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.3)', transform: `scale(${markerScale})`, transition: 'transform 0.2s' }} 
@@ -776,7 +1075,7 @@ const InteractiveMap = ({ onBack, mode = 'building' }) => {
           ))}
 
           {/* Health Centers Markers (Mavi, "S" Harfi) */}
-          {HEALTH_CENTERS.map(center => (
+          {mode !== 'mesh_view' && HEALTH_CENTERS.map(center => (
             <Marker key={center.id} longitude={center.coordinates[0]} latitude={center.coordinates[1]} anchor="center">
               <div 
                 style={{ background: 'white', border: '2px solid #0288d1', color: '#0288d1', borderRadius: '4px', width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.3)', transform: `scale(${markerScale})`, transition: 'transform 0.2s' }} 
@@ -788,7 +1087,7 @@ const InteractiveMap = ({ onBack, mode = 'building' }) => {
           ))}
 
           {/* Pharmacies Markers (Türkiye standardı Kırmızı "E" Harfi) */}
-          {PHARMACIES.map(pharmacy => (
+          {mode !== 'mesh_view' && PHARMACIES.map(pharmacy => (
             <Marker key={pharmacy.id} longitude={pharmacy.coordinates[0]} latitude={pharmacy.coordinates[1]} anchor="center">
               <div 
                 style={{ background: 'white', border: '2px solid #e53935', color: '#e53935', borderRadius: '4px', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.3)', transform: `scale(${markerScale})`, transition: 'transform 0.2s' }} 

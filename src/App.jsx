@@ -48,10 +48,10 @@ function App() {
       
       <main style={{ height: currentView === 'afad' ? '100vh' : undefined }}>
         {currentView === 'dashboard' && <Dashboard onNavigate={handleNavigate} />}
-        {(currentView === 'building' || currentView === 'road' || currentView === 'medical' || currentView === 'supply' || currentView === 'supply_view') && 
+        {(currentView === 'building' || currentView === 'road' || currentView === 'medical' || currentView === 'supply' || currentView === 'supply_view' || currentView === 'mesh_view') && 
           <InteractiveMap onBack={handleBackToDashboard} mode={currentView} />
         }
-        {currentView === 'afad' && <AfadDashboard onBack={handleBackToDashboard} onShowMap={() => handleNavigate('road')}/>}
+        {currentView === 'afad' && <AfadDashboard onBack={handleBackToDashboard} onShowMap={() => handleNavigate('road')} onShowMesh={() => handleNavigate('mesh_view')} />}
       </main>
     </>
   );
