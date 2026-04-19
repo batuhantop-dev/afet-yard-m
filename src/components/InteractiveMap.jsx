@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Map, { Source, Layer, Popup, Marker } from 'react-map-gl/maplibre';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { ArrowLeft, Route, Activity, ShieldAlert, CheckCircle, Server, Radio, HeartPulse, Package } from 'lucide-react';
+import { ArrowLeft, Route, Activity, ShieldAlert, CheckCircle, Server, Radio, HeartPulse, Package, Car, Footprints } from 'lucide-react';
 import styles from './InteractiveMap.module.css';
 
 // HARDCODED ORS API KEY
@@ -69,6 +69,28 @@ const ZEYTINBURNU_POLYGON = {
         type: 'Polygon',
         coordinates: [ZEYTINBURNU_COORDS]
       }
+    }
+  ]
+};
+
+// 1. Derece Acil Ulaşım Yolları (Dış Yardım Koridorları)
+const EMERGENCY_ROADS = {
+  type: 'FeatureCollection',
+  features: [
+    {
+      type: 'Feature',
+      properties: { name: 'D-100 (E-5) Karayolu' },
+      geometry: { type: 'LineString', coordinates: [[28.8750, 41.0120], [28.9000, 41.0180], [28.9240, 41.0110]] }
+    },
+    {
+      type: 'Feature',
+      properties: { name: 'Kennedy Cd. (Sahil Yolu)' },
+      geometry: { type: 'LineString', coordinates: [[28.8910, 40.9850], [28.9050, 40.9890], [28.9280, 40.9910]] }
+    },
+    {
+      type: 'Feature',
+      properties: { name: '10. Yıl Caddesi' },
+      geometry: { type: 'LineString', coordinates: [[28.9240, 41.0110], [28.9220, 41.0000], [28.9280, 40.9910]] }
     }
   ]
 };
@@ -170,6 +192,7 @@ const InteractiveMap = ({ onBack, mode = 'building' }) => {
   const [endPoint, setEndPoint] = useState(null);
   const [routeData, setRouteData] = useState(null);
   const [isRouting, setIsRouting] = useState(false);
+  const [transportMode, setTransportMode] = useState('cycling-road');
 
   // Normal left click is for manual routing
   const onClick = useCallback(event => {
@@ -324,7 +347,7 @@ const InteractiveMap = ({ onBack, mode = 'building' }) => {
   };
 
   // Helper to fetch a route from OpenRouteService API with exclusions
-  const fetchRoute = async (startCoords, endCoords) => {
+  const fetchRoute = async (startCoords, endCoords, mode = 'driving-car') => {
       const polygons = [];
       Object.values(reports).forEach(report => {
          if (report.status === 'yol_kapali' || report.status === 'yikildi') {
@@ -347,7 +370,7 @@ const InteractiveMap = ({ onBack, mode = 'building' }) => {
           };
       }
 
-      const res = await fetch('https://api.openrouteservice.org/v2/directions/driving-car/geojson', {
+      const res = await fetch(`https://api.openrouteservice.org/v2/directions/${mode}/geojson`, {
           method: 'POST',
           headers: {
               'Accept': 'application/json, application/geo+json, application/gpx+xml, img/png; charset=utf-8',
@@ -371,7 +394,7 @@ const InteractiveMap = ({ onBack, mode = 'building' }) => {
          setIsRouting(true);
          try {
            const promises = MEDICAL_FACILITIES.map(async (fac) => {
-               const data = await fetchRoute(ASSEMBLY_POINTS[0].coordinates, fac.coordinates);
+               const data = await fetchRoute(ASSEMBLY_POINTS[0].coordinates, fac.coordinates, transportMode);
                return { fac, data };
            });
            const results = await Promise.all(promises);
@@ -408,7 +431,7 @@ const InteractiveMap = ({ onBack, mode = 'building' }) => {
       const findManual = async () => {
          setIsRouting(true);
          try {
-           const data = await fetchRoute(startPoint, endPoint);
+           const data = await fetchRoute(startPoint, endPoint, transportMode);
            if (data.features && data.features.length > 0) {
               setRouteData(data.features[0].geometry);
            } else {
@@ -421,7 +444,7 @@ const InteractiveMap = ({ onBack, mode = 'building' }) => {
       };
       findManual();
     }
-  }, [startPoint, endPoint, activeNearestMode, reports]);
+  }, [startPoint, endPoint, activeNearestMode, reports, transportMode]);
 
   const onMapLoad = useCallback((e) => {
     const map = e.target;
@@ -464,7 +487,7 @@ const InteractiveMap = ({ onBack, mode = 'building' }) => {
 
       if (report.status === 'yikildi') {
         color = '#f44336';
-        customHeight = 2; // Yıkılan bina "moloz" gibi yerde gözüksün (2m)
+        customHeight = 15.2; // Yıkılan binalar haritada daha belirgin görünsün diye tekrar eski standart yüksekliğine getirildi.
       } else if (report.status === 'agir_hasarli') {
         color = '#ff9800';
         customHeight = 15.2;
@@ -543,6 +566,36 @@ const InteractiveMap = ({ onBack, mode = 'building' }) => {
             {isRouting && activeNearestMode ? 'Hesaplanıyor...' : 'En Yakın Hastane'}
           </button>
 
+          {/* Transport Mode Toggles */}
+          <div style={{ display: 'flex', background: '#f1f5f9', borderRadius: '4px', padding: '2px', marginLeft: '4px' }}>
+            <button
+               onClick={() => setTransportMode('cycling-road')}
+               style={{
+                  background: transportMode === 'cycling-road' ? '#fff' : 'transparent',
+                  color: transportMode === 'cycling-road' ? '#2196f3' : '#64748b',
+                  border: 'none', padding: '6px 8px', borderRadius: '4px', cursor: 'pointer',
+                  boxShadow: transportMode === 'cycling-road' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                  display: 'flex', alignItems: 'center'
+               }}
+               title="Afet Aracı Rotası (Ters Yön İhlali Yapabilir)"
+            >
+               <Car size={16} />
+            </button>
+            <button
+               onClick={() => setTransportMode('foot-walking')}
+               style={{
+                  background: transportMode === 'foot-walking' ? '#fff' : 'transparent',
+                  color: transportMode === 'foot-walking' ? '#2196f3' : '#64748b',
+                  border: 'none', padding: '6px 8px', borderRadius: '4px', cursor: 'pointer',
+                  boxShadow: transportMode === 'foot-walking' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                  display: 'flex', alignItems: 'center'
+               }}
+               title="Yaya Rotası Algoritması"
+            >
+               <Footprints size={16} />
+            </button>
+          </div>
+
           <button 
             onClick={() => {
               setActiveNearestMode(false);
@@ -591,8 +644,8 @@ const InteractiveMap = ({ onBack, mode = 'building' }) => {
                 id="zeytinburnu-fill"
                 type="fill"
                 paint={{
-                   'fill-color': '#9c27b0',
-                   'fill-opacity': 0.1
+                   'fill-color': '#7e57c2', // Hafif, kafa karıştırmayan bir mor
+                   'fill-opacity': 0.15
                 }}
              />
              <Layer
@@ -604,6 +657,57 @@ const InteractiveMap = ({ onBack, mode = 'building' }) => {
                    'line-dasharray': [2, 2]
                 }}
              />
+          </Source>
+
+          {/* 1. Derece Acil Ulaşım Yolları (Dış Yardım Koridorları) */}
+          <Source id="emergency-roads" type="geojson" data={EMERGENCY_ROADS}>
+             <Layer
+                id="emergency-roads-bg"
+                type="line"
+                paint={{
+                   'line-color': '#f59e0b',
+                   'line-width': 8,
+                   'line-opacity': 0.35
+                }}
+             />
+             <Layer
+                id="emergency-roads-line"
+                type="line"
+                paint={{
+                   'line-color': '#d97706',
+                   'line-width': 3,
+                   'line-dasharray': [2, 1]
+                }}
+             />
+          </Source>
+
+          {/* Toplanma Alanları Yeşil Bölge (Safe Zone) Halesi */}
+          <Source id="assembly-safe-zones" type="geojson" data={{
+              type: 'FeatureCollection',
+              features: ASSEMBLY_POINTS.map(ap => ({
+                  type: 'Feature', geometry: { type: 'Point', coordinates: ap.coordinates }
+              }))
+          }}>
+              <Layer
+                  id="assembly-halo-fill"
+                  type="circle"
+                  paint={{
+                      'circle-color': '#4caf50',
+                      'circle-opacity': 0.15,
+                      'circle-stroke-width': 2,
+                      'circle-stroke-color': '#4caf50',
+                      'circle-stroke-opacity': 0.6,
+                      'circle-radius': [
+                          'interpolate',
+                          ['exponential', 2],
+                          ['zoom'],
+                          12, 10,
+                          14, 40,
+                          16, 120,
+                          18, 300
+                      ]
+                  }}
+              />
           </Source>
 
           {/* Route Layer */}

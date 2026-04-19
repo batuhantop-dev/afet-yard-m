@@ -95,10 +95,11 @@ const Dashboard = ({ onNavigate }) => {
         </button>
       </div>
 
-      <div style={{ marginTop: '3rem', textAlign: 'center' }}>
-        <p style={{color: '#666', fontSize: '0.9rem', marginBottom: '1rem'}}>
-          (Jüri Demoları İçin Özel Yetkili Ekranı)
+      <div style={{ marginTop: '3rem', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+        <p style={{color: '#666', fontSize: '0.9rem', margin: 0}}>
+          (Jüri Demoları İçin Ekranlar)
         </p>
+
         <button 
           onClick={() => onNavigate('afad')}
           style={{
@@ -111,6 +112,23 @@ const Dashboard = ({ onNavigate }) => {
         >
           <ShieldAlert size={20} />
           AFAD / Kızılay Kriz Kontrol Merkezine Bağlan
+        </button>
+
+        <button 
+          onClick={() => {
+            if(window.confirm('Tüm harita verileri, test pinleri ve AFAD logları sıfırlanacak. Demoyu baştan başlatmak istediğinize emin misiniz?')) {
+              localStorage.removeItem('disaster_reports');
+              localStorage.removeItem('form_reports');
+              window.location.reload();
+            }
+          }}
+          style={{
+            background: 'transparent', color: '#666', padding: '8px 16px', 
+            borderRadius: '4px', border: '1px dashed #ccc', 
+            cursor: 'pointer', fontSize: '0.85rem', marginTop: '1rem'
+          }}
+        >
+          Tüm Test Verilerini ve Haritayı Sıfırla
         </button>
       </div>
 
